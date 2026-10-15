@@ -739,12 +739,20 @@ void startRTSP() {
   }
   Serial.println("[CAMERA] Starting H264 encoder");
   videoConfig=VideoSetting(runningDevice.resolution,runningDevice.fps,VIDEO_H264,0);
+  // SDK 4.1.0 leaves _rotation unset in this constructor. A temporary is
+  // not zero-initialized like the global object; explicitly set it before
+  // passing the copied video settings to the camera driver.
+  videoConfig.setRotation(0);
   videoConfig.setBitrate(runningDevice.bitrate);
+  Serial.print("[CAMERA] H264 dimensions: ");Serial.print(videoConfig.width());Serial.print('x');Serial.println(videoConfig.height());
+  Serial.print("[CAMERA] FPS: ");Serial.println(videoConfig.fps());
+  Serial.println("[CAMERA] Rotation: 0");
   Camera.configVideoChannel(
       VIDEO_CHANNEL,
       videoConfig
   );
   Camera.videoInit();
+  Serial.print("[CAMERA] Open status (SDK raw): ");Serial.println(Camera.cameraOpenStatus());
   if(!rtsp.preparePort(runningDevice.rtspPort)) { Serial.println("[RTSP] Port setup failed"); return; }
   rtsp.configVideo(videoConfig);
   rtsp.begin();
@@ -757,6 +765,7 @@ void startRTSP() {
     return;
   }
   Camera.channelBegin(VIDEO_CHANNEL);
+  Camera.printInfo();
   rtspStarted = true;
   Serial.println("[RTSP] Initialized");
   printRTSP();
